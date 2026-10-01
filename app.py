@@ -74,11 +74,28 @@ with col5:
 with col6:
     st.metric(label="GAST (Aparente)", value=gast_str)
 
+# --- Cálculo correcto de desfases numéricos de escala ---
+
+# 1. TAI - UTC (segundos intercalares acumulados)
+# Multiplicar la diferencia de MJD/JD por 86400 s/día
+diff_tai_utc = ((t_tai.jd1 - t_utc.jd1) + (t_tai.jd2 - t_utc.jd2)) * 86400.0
+
+# 2. TCG - TT (avance de la coordenada geocéntrica respecto al geoide)
+diff_tcg_tt = ((t_tcg.jd1 - t_tt.jd1) + (t_tcg.jd2 - t_tt.jd2)) * 86400.0
+
+# 3. DUT1 oficial provisto por las tablas IERS
+try:
+    dut1_val = float(t_utc.delta_ut1_utc)
+except Exception:
+    dut1_val = None
+
+# --- Visualización de Desfases ---
 st.markdown("---")
 st.markdown("### Desfases y Parámetros")
-st.write(f"- **TAI − UTC:** `{(t_tai - t_utc).to('s').value:.3f} s` (segundos intercalares acumulados)")
+st.write(f"- **TAI − UTC:** `{diff_tai_utc:.3f} s` (segundos intercalares acumulados)")
 st.write(f"- **TT − TAI:** `32.184 s` (fijo por definición)")
-st.write(f"- **TCG − TT:** `{(t_tcg - t_tt).to('s').value:.6f} s` (deriva secular relativista)")
+st.write(f"- **TCG − TT:** `{diff_tcg_tt:.6f} s` (deriva secular relativista acumulada)")
+
 if dut1_val is not None:
     st.write(f"- **DUT1 (UT1 − UTC):** `{dut1_val:+.6f} s`")
 else:
