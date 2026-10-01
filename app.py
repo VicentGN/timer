@@ -25,7 +25,7 @@ else:
 
 # 1. Escalas atómicas y uniformes
 t_tai = t_utc.tai
-t_gps = t_utc.replicate(scale='gps')  				
+t_gps = t_utc.copy(scale='gps') 				
 t_tt  = t_utc.tt                      # TT = TAI + 32.184 s
 t_tcg = t_utc.tcg                     # Tiempo de Coordenadas Geocéntrico
 
