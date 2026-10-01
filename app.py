@@ -107,7 +107,7 @@ col9.info(f"**TDB (Dinámico Baricéntrico, Geocentro)**\n\n`{datos['tdb']}`")
 
 st.markdown("---")
 st.markdown("### Transformaciones y Desfases")
-k1, k2, k3 = st.columns(4)
+k1, k2, k3 = st.columns(3)
 k1.metric("TAI − UTC", f"{datos['diff_tai_utc']:.0f} s", help="Segundos intercalares acumulados.")
 k2.metric("TT − TAI", f"{datos['diff_tt_tai']:.3f} s", help="Constante IAU: 32.184 s.")
 k3.metric("TCG − TT", f"{datos['diff_tcg_tt']:.6f} s", help="Efecto relativista acumulado.")
