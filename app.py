@@ -68,7 +68,7 @@ col1, col2, col3 = st.columns(3)
 with col1:
     st.info(f"**UTC (Coordinado)**\nÉpoca: 01-01-1972\n\n`{t_utc.iso}`")
 with col2:
-    st.success(f"**TAI (Atómico Internacional)**\nÉpoca: 01-01-1958\n\n`{t_tai.iso}`")
+    st.success(f"**TAI (Atómico Internacional)**      \nÉpoca: 01-01-1958\n\n`{t_tai.iso}`")
 with col3:
     st.error(f"**UT1 (+ Movimiento polar)**\n\n`{ut1_str}`")
 
