@@ -25,7 +25,6 @@ else:
 
 # 1. Escalas atómicas y uniformes
 t_tai = t_utc.tai
-t_gps = t_utc.copy(scale='gps') 				
 t_tt  = t_utc.tt                      # TT = TAI + 32.184 s
 t_tcg = t_utc.tcg                     # Tiempo de Coordenadas Geocéntrico
 
@@ -53,7 +52,6 @@ except (IERSRangeError, Exception):
 
 # 3. Desfases entre escalas (en segundos)
 diff_tai_utc = ((t_tai.jd1 - t_utc.jd1) + (t_tai.jd2 - t_utc.jd2)) * 86400.0
-diff_tai_gps = ((t_tai.jd1 - t_gps.jd1) + (t_tai.jd2 - t_gps.jd2)) * 86400.0
 diff_tcg_tt  = ((t_tcg.jd1 - t_tt.jd1)  + (t_tcg.jd2 - t_tt.jd2))  * 86400.0
 
 # --- Visualización ---
@@ -66,8 +64,6 @@ col1, col2 = st.columns(2)
 with col1:
     st.info(f"**UTC (Coordinado)**\n\n`{t_utc.iso}`")
     st.success(f"**TAI (Atómico Internacional)**\n\n`{t_tai.iso}`")
-with col2:
-    st.warning(f"**GPS (Sistema GPS)**\n\n`{t_gps.iso}`")
     st.error(f"**UT1 (Rotacional)**\n\n`{ut1_str}`")
 
 st.markdown("### 2. Escalas Dinámicas y Coordenadas")
@@ -86,9 +82,7 @@ with col6:
 
 st.markdown("---")
 st.markdown("### Desfases y Parámetros")
-st.write(f"- **TAI − GPS:** `{diff_tai_gps:.3f} s` (fijo: TAI va 19 s por delante de GPS)")
 st.write(f"- **TAI − UTC:** `{diff_tai_utc:.3f} s` (segundos intercalares acumulados)")
-st.write(f"- **GPS − UTC:** `{diff_tai_utc - diff_tai_gps:.3f} s` (diferencia visible entre GPS y UTC)")
 st.write(f"- **TT − TAI:** `32.184 s` (fijo por definición)")
 st.write(f"- **TCG − TT:** `{diff_tcg_tt:.6f} s` (deriva secular relativista)")
 
