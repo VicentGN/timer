@@ -70,7 +70,7 @@ with col1:
 with col2:
     st.success(f"**TAI (Atómico Internacional)**\n\n`{t_tai.iso}`")
 with col3:
-    st.error(f"**UT1 (Incluyendo movimiento)**\n\n`{ut1_str}`")
+    st.error(f"**UT1 (+ Movimiento polar)**\n\n`{ut1_str}`")
 
 st.markdown("### 2. Escalas Dinámicas y Coordenadas")
 col4, col5 = st.columns(2)
