@@ -48,7 +48,7 @@ def computar_escalas(iso_timestamp: str):
     t = Time(iso_timestamp, scale='utc')
     
     t_tai = t.tai
-    t_gps = t.gps
+    t_gps = Time(t_utc.gps, format='gps')
     t_tt  = t.tt
     t_tcg = t.tcg
     t_tdb = t.tdb
@@ -69,7 +69,7 @@ def computar_escalas(iso_timestamp: str):
     return {
         "utc": t.iso,
         "tai": t_tai.iso,
-        "gps": t_gps.iso,
+        "gps": t_gps.to_value('iso'),
         "tt": t_tt.iso,
         "tcg": t_tcg.iso,
         "tdb": t_tdb.iso,
@@ -79,7 +79,6 @@ def computar_escalas(iso_timestamp: str):
         "dut1": dut1,
         "iers_disponible": iers_ok,
         "diff_tai_utc": (t_tai - t).to('s').value,
-        "diff_tai_gps": (t_tai - t_gps).to('s').value,
         "diff_tt_tai": (t_tt - t_tai).to('s').value,
         "diff_tcg_tt": (t_tcg - t_tt).to('s').value,
     }
@@ -108,11 +107,10 @@ col9.info(f"**TDB (Dinámico Baricéntrico, Geocentro)**\n\n`{datos['tdb']}`")
 
 st.markdown("---")
 st.markdown("### Transformaciones y Desfases")
-k1, k2, k3, k4 = st.columns(4)
+k1, k2, k3 = st.columns(4)
 k1.metric("TAI − UTC", f"{datos['diff_tai_utc']:.0f} s", help="Segundos intercalares acumulados.")
-k2.metric("TAI − GPS", f"{datos['diff_tai_gps']:.1f} s", help="Offset canónico fijo (19 s).")
-k3.metric("TT − TAI", f"{datos['diff_tt_tai']:.3f} s", help="Constante IAU: 32.184 s.")
-k4.metric("TCG − TT", f"{datos['diff_tcg_tt']:.6f} s", help="Efecto relativista acumulado.")
+k2.metric("TT − TAI", f"{datos['diff_tt_tai']:.3f} s", help="Constante IAU: 32.184 s.")
+k3.metric("TCG − TT", f"{datos['diff_tcg_tt']:.6f} s", help="Efecto relativista acumulado.")
 
 if datos['iers_disponible']:
     st.caption(f"**DUT1 ($UT1 - UTC$):** `{datos['dut1']:+.6f} s` (IERS Bulletin A/B en memoria local).")
