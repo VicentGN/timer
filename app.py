@@ -77,7 +77,6 @@ with col6:
 st.markdown("---")
 st.markdown("### Desfases y Parámetros")
 st.write(f"- **TAI − UTC:** `{(t_tai - t_utc).to('s').value:.3f} s` (segundos intercalares acumulados)")
-st.write(f"- **GPS − UTC:** `{(fecha_legible_gps - t_utc).to('s').value:.3f} s`")
 st.write(f"- **TT − TAI:** `32.184 s` (fijo por definición)")
 st.write(f"- **TCG − TT:** `{(t_tcg - t_tt).to('s').value:.6f} s` (deriva secular relativista)")
 if dut1_val is not None:
