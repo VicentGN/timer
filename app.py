@@ -27,13 +27,13 @@ else:
     t_utc = Time(dt_str, format='iso', scale='utc')
 
 # 1. Escalas atómicas y uniformes
-t_tai = t_utc.tai
-t_gps = t_utc.gps
-t_tt  = t_utc.tt   # TT = TAI + 32.184 s
+t_tai = t_utc.replicate(scale='tai')
+t_gps = t_utc.replicate(scale='gps')
+t_tt  = t_utc.replicate(scale='tt')  # TT = TAI + 32.184 s
 t_te  = t_tt       # Ephemeris Time (ET/TE) continuado formalmente por TT
 
 # 2. Escalas rotacionales y solares
-t_ut1 = t_utc.ut1  # UT1 con corrección del IERS
+t_ut1 = t_utc.replicate(scale='ut1')  # UT1 con corrección del IERS
 # UT (de forma genérica en astronomía civil equivale a UTC con desglose entero)
 t_ut  = t_utc
 
