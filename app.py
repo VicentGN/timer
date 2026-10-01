@@ -101,7 +101,7 @@ else:
 st.markdown("---")
 with st.expander("ℹ️ Aviso legal y exención de responsabilidad"):
     st.caption(
-        "Esta aplicación tiene fines **estrictamente divulgativos y didácticos**. "
+        "Esta aplicación tiene fines **estrictamente de aprendizaje**. "
         "Los cálculos temporales, transformaciones de escala y parámetros de orientación terrestre (IERS) "
         "no deben ser utilizados para operaciones de navegación marítima/aérea, sincronización de infraestructura crítica, "
         "guiado orbital o cualquier aplicación técnica donde un margen de error temporal suponga riesgos operativos o materiales. "
