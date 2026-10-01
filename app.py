@@ -57,7 +57,6 @@ except (IERSRangeError, Exception) as e:
 
 # 3. Desfases entre escalas atómicas/coordinadas
 diff_tai_utc = ((t_tai.jd1 - t_utc.jd1) + (t_tai.jd2 - t_utc.jd2)) * 86400.0
-diff_gps_utc = ((t_gps.jd1 - t_utc.jd1) + (t_gps.jd2 - t_utc.jd2)) * 86400.0
 diff_tcg_tt  = ((t_tcg.jd1 - t_tt.jd1)  + (t_tcg.jd2 - t_tt.jd2))  * 86400.0
 
 # --- Visualización ---
@@ -91,7 +90,6 @@ with col6:
 st.markdown("---")
 st.markdown("### Desfases y Parámetros")
 st.write(f"- **TAI − UTC:** `{diff_tai_utc:.3f} s` (segundos intercalares)")
-st.write(f"- **GPS − UTC:** `{diff_gps_utc:.3f} s`")
 st.write(f"- **TT − TAI:** `32.184 s` (fijo por definición)")
 st.write(f"- **TCG − TT:** `{diff_tcg_tt:.6f} s` (deriva secular relativista)")
 if dut1_val is not None:
