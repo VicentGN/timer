@@ -27,7 +27,7 @@ else:
 
 # 1. Escalas atómicas y uniformes (no dependen de IERS)
 t_tai = t_utc.tai
-t_gps = t_utc.gps
+t_gps = Time(t_utc.gps, format='gps')
 t_tt  = t_utc.tt    # TT = TAI + 32.184 s
 t_tcg = t_utc.tcg   # TCG: Tiempo de Coordenadas Geocéntrico
 
@@ -70,7 +70,7 @@ with col1:
     st.info(f"**UTC (Coordinado)**\n\n`{t_utc.iso}`")
     st.success(f"**TAI (Atómico Internacional)**\n\n`{t_tai.iso}`")
 with col2:
-    st.warning(f"**GPS (Sistema GPS)**\n\n`{t_gps.iso}`")
+    st.warning(f"**GPS (Sistema GPS)**\n\n`{t_gps.to_value('iso')}`")
     st.error(f"**UT1 (Rotación Real)**\n\n`{ut1_str}`")
 
 st.markdown("### 2. Escalas Dinámicas y Coordenadas")
