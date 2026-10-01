@@ -79,7 +79,7 @@ with col4:
 with col5:
     st.info(f"**TCG (Coordenadas Geocéntrico)**\n\n`{t_tcg.iso}`")
 
-st.markdown("### 3. Tiempo Sidéreo en Greenwich (Ascensiones rectas celestes en º, ' y "")
+st.markdown("### 3. Tiempo Sidéreo en Greenwich (Ascensiones rectas celestes en º, ' y ''")
 col6, col7 = st.columns(2)
 with col6:
     st.metric(label="GMST (Medio)", value=gmst_str)
