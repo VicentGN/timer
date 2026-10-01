@@ -1,102 +1,120 @@
-from datetime import date, time
+
+from datetime import date, datetime, time, timezone
+import astropy.units as u
 from astropy.time import Time
-from astropy.utils.iers import IERSRangeError
+from astropy.utils.iers import IERS_Auto, IERSRangeError, conf as iers_conf
 import streamlit as st
 
-st.set_page_config(page_title="Reloj Multiescala", page_icon="⏱️", layout="centered")
+# --- Configuración y Optimización de IERS ---
+@st.cache_resource(show_spinner="Cargando tablas de orientación terrestre (IERS)...")
+def inicializar_iers():
+    """Descarga/carga una única vez la tabla IERS en caché y bloquea llamadas remotas sucesivas."""
+    iers_conf.auto_download = True
+    # Forzar la carga de la tabla en memoria
+    tabla = IERS_Auto.open()
+    # Desactivar descargas automáticas para re-runs posteriores
+    iers_conf.auto_download = False
+    return tabla
+
+# Inicializar recurso único
+tabla_iers = inicializar_iers()
+
+st.set_page_config(page_title="Reloj Multiescala", page_icon="⏱️", layout="wide")
 st.title("⏱️ Monitor Multiescala de Tiempo")
 
-# Selector de modo
+# --- Selector de Entrada ---
 modo = st.radio("Modo de consulta:", ["Instante actual", "Fecha y hora específica"], horizontal=True)
 
 if modo == "Instante actual":
     t_utc = Time.now()
-    if st.button("🔄 Actualizar ahora"):
+    if st.button("🔄 Actualizar instante"):
         st.rerun()
 else:
-    c_fecha, c_hora = st.columns(2)
+    c_fecha, c_hora, c_frac = st.columns([2, 2, 1])
     with c_fecha:
         d = st.date_input("Fecha:", value=date.today())
     with c_hora:
-        h = st.time_input("Hora (UTC):", value=time(12, 0, 0))
-    dt_str = f"{d.isoformat()} {h.strftime('%H:%M:%S')}"
-    t_utc = Time(dt_str, format='iso', scale='utc')
+        h = st.time_input("Hora (UTC):", value=time(12, 0, 0), step=1)
+    with c_frac:
+        frac_s = st.number_input("Fracción (s):", min_value=0.0, max_value=0.999999, value=0.0, step=0.001, format="%.6f")
 
-# 1. Escalas atómicas y uniformes
-t_tai = t_utc.tai
-t_gps = t_utc.gps
-t_tt  = t_utc.tt    # TT = TAI + 32.184 s
-t_tcg = t_utc.tcg   # TCG: Tiempo de Coordenadas Geocéntrico
+    dt_base = datetime.combine(d, h).replace(tzinfo=timezone.utc)
+    t_utc = Time(dt_base) + frac_s * u.second
 
-# Obtener fecha legible gps
-t_gps_obj = Time(t_utc.gps, format='gps')
-fecha_legible_gps = t_gps_obj.to_value('iso')
+# --- Función de cálculo con caché para fechas fijas ---
+@st.cache_data
+def computar_escalas(iso_timestamp: str):
+    """Calcula todas las transformaciones temporales reutilizando memoria."""
+    t = Time(iso_timestamp, scale='utc')
+    
+    t_tai = t.tai
+    t_gps = t.gps
+    t_tt  = t.tt
+    t_tcg = t.tcg
+    t_tdb = t.tdb
 
+    iers_ok = True
+    try:
+        dut1 = float(t.delta_ut1_utc)
+        ut1_txt = t.ut1.iso
+        gmst_txt = t.sidereal_time('mean', 'greenwich', model='IAU_2006').to_string(sep=':', precision=3, pad=True)
+        gast_txt = t.sidereal_time('apparent', 'greenwich', model='IAU_2006').to_string(sep=':', precision=3, pad=True)
+    except (IERSRangeError, ValueError, Exception):
+        iers_ok = False
+        dut1 = None
+        ut1_txt = "Fuera de cobertura IERS"
+        gmst_txt = "No disponible"
+        gast_txt = "No disponible"
 
-# 2. Escala rotacional UT1 con control de error por rango IERS
-dut1_val = None
-try:
-    t_ut1 = t_utc.ut1
-    ut1_str = t_ut1.iso
-    dut1_val = (t_ut1 - t_utc).to('s').value
-except IERSRangeError:
-    ut1_str = "Fuera de rango IERS disponible"
+    return {
+        "utc": t.iso,
+        "tai": t_tai.iso,
+        "gps": t_gps.iso,
+        "tt": t_tt.iso,
+        "tcg": t_tcg.iso,
+        "tdb": t_tdb.iso,
+        "ut1": ut1_txt,
+        "gmst": gmst_txt,
+        "gast": gast_txt,
+        "dut1": dut1,
+        "iers_disponible": iers_ok,
+        "diff_tai_utc": (t_tai - t).to('s').value,
+        "diff_tai_gps": (t_tai - t_gps).to('s').value,
+        "diff_tt_tai": (t_tt - t_tai).to('s').value,
+        "diff_tcg_tt": (t_tcg - t_tt).to('s').value,
+    }
 
-# 3. Tiempo Sidéreo en Greenwich (formateado nativamente con precisión a milisegundos)
-gmst = t_utc.sidereal_time('mean', 'greenwich')
-gast = t_utc.sidereal_time('apparent', 'greenwich')
+# Si es modo histórico/fijo, se aprovecha el caché; en tiempo real computa directo
+datos = computar_escalas(t_utc.iso)
 
-gmst_str = gmst.to_string(sep=':', precision=3, pad=True)
-gast_str = gast.to_string(sep=':', precision=3, pad=True)
+# --- Renderizado UI ---
+st.markdown("### 1. Escalas Civiles, Atómicas y Navegación")
+col1, col2, col3 = st.columns(3)
+col1.info(f"**UTC (Coordinado)**\n\n`{datos['utc']}`")
+col2.success(f"**TAI (Atómico Internacional)**\n\n`{datos['tai']}`")
+col3.warning(f"**GPS (Sistema Satelital)**\n\n`{datos['gps']}`")
 
-# --- Visualización ---
+st.markdown("### 2. Rotación Terrestre y Orientación Celeste (Observadas)")
+col4, col5, col6 = st.columns(3)
+col4.error(f"**UT1 (Ángulo de Rotación Terrestre)**\n\n`{datos['ut1']}`")
+col5.metric(label="GMST (Sidéreo Medio Greenwich)", value=datos['gmst'])
+col6.metric(label="GAST (Sidéreo Aparente Greenwich)", value=datos['gast'])
 
-st.markdown("### 1. Escalas Civiles y Atómicas")
-col1, col2 = st.columns(2)
-with col1:
-    st.info(f"**UTC (Coordinado)**\n\n`{t_utc.iso}`")
-    st.success(f"**TAI (Atómico Internacional)**\n\n`{t_tai.iso}`")
-with col2:
-    st.warning(f"**GPS (Sistema GPS)**\n\n`{fecha_legible_gps}`")
-    st.error(f"**UT1 (Rotación Real)**\n\n`{ut1_str}`")
+st.markdown("### 3. Escalas Dinámicas y Relativistas")
+col7, col8, col9 = st.columns(3)
+col7.info(f"**TT (Tiempo Terrestre - Geoide)**\n\n`{datos['tt']}`")
+col8.info(f"**TCG (Coordenada Geocéntrica)**\n\n`{datos['tcg']}`")
+col9.info(f"**TDB (Dinámico Baricéntrico, Geocentro)**\n\n`{datos['tdb']}`")
 
-st.markdown("### 2. Escalas Dinámicas y Coordenadas")
-col3, col4 = st.columns(2)
-with col3:
-    st.info(f"**TT (Tiempo Terrestre)**\n\n`{t_tt.iso}`")
-with col4:
-    st.info(f"**TCG (Coordenadas Geocéntrico)**\n\n`{t_tcg.iso}`")
-
-st.markdown("### 3. Tiempo Sidéreo en Greenwich")
-col5, col6 = st.columns(2)
-with col5:
-    st.metric(label="GMST (Medio)", value=gmst_str)
-with col6:
-    st.metric(label="GAST (Aparente)", value=gast_str)
-
-# --- Cálculo correcto de desfases numéricos de escala ---
-
-# 1. TAI - UTC (segundos intercalares acumulados)
-# Multiplicar la diferencia de MJD/JD por 86400 s/día
-diff_tai_utc = ((t_tai.jd1 - t_utc.jd1) + (t_tai.jd2 - t_utc.jd2)) * 86400.0
-
-# 2. TCG - TT (avance de la coordenada geocéntrica respecto al geoide)
-diff_tcg_tt = ((t_tcg.jd1 - t_tt.jd1) + (t_tcg.jd2 - t_tt.jd2)) * 86400.0
-
-# 3. DUT1 oficial provisto por las tablas IERS
-try:
-    dut1_val = float(t_utc.delta_ut1_utc)
-except Exception:
-    dut1_val = None
-
-# --- Visualización de Desfases ---
 st.markdown("---")
-st.markdown("### Desfases y Parámetros")
-st.write(f"- **TAI − UTC:** `{diff_tai_utc:.3f} s` (segundos intercalares acumulados)")
-st.write(f"- **TT − TAI:** `32.184 s` (fijo por definición)")
-st.write(f"- **TCG − TT:** `{diff_tcg_tt:.6f} s` (deriva secular relativista acumulada)")
+st.markdown("### Transformaciones y Desfases")
+k1, k2, k3, k4 = st.columns(4)
+k1.metric("TAI − UTC", f"{datos['diff_tai_utc']:.0f} s", help="Segundos intercalares acumulados.")
+k2.metric("TAI − GPS", f"{datos['diff_tai_gps']:.1f} s", help="Offset canónico fijo (19 s).")
+k3.metric("TT − TAI", f"{datos['diff_tt_tai']:.3f} s", help="Constante IAU: 32.184 s.")
+k4.metric("TCG − TT", f"{datos['diff_tcg_tt']:.6f} s", help="Efecto relativista acumulado.")
 
-if dut1_val is not None:
-    st.write(f"- **DUT1 (UT1 − UTC):** `{dut1_val:+.6f} s`")
+if datos['iers_disponible']:
+    st.caption(f"**DUT1 ($UT1 - UTC$):** `{datos['dut1']:+.6f} s` (IERS Bulletin A/B en memoria local).")
 else:
-    st.write("- **DUT1:** *No disponible para esta fecha.*")
+    st.caption("⚠️ **Aviso:** Fecha fuera del rango predictivo u observacional de las tablas IERS.")
