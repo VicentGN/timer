@@ -1,7 +1,15 @@
 from datetime import date, time
 import streamlit as st
 from astropy.time import Time
+from astropy.utils import iers
 from astropy.utils.iers import IERSRangeError, conf
+from astropy.utils.data import clear_download_cache
+
+# Limpiar caché de descargas previas
+clear_download_cache()
+
+# Forzar descarga fresca del IERS
+iers.IERS_Auto.open()
 
 # Permitir el uso de tablas cacheadas y evitar bloqueos por expiración de predicciones
 conf.auto_max_age = None
